@@ -9,9 +9,9 @@ void bubble_sort(int* array, int size)
 {
     int i, j;
     for (i = 0; i < size - 1; ++i) {
-    for (j = 0; j < size - i; ++j) {
-    if (array[j] > array[j + 1]) {
-    swap(&array[j], &array[j + 1]);
+    for (j = 1; j < size - i; ++j) {
+    if (array[j-1] > array[j]) {
+    swap(&array[j-1], &array[j]);
 }
 }
 }
@@ -25,3 +25,4 @@ int main()
     printf("%d ", array[i]);
 }
     printf("\n");
+}
