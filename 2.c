@@ -1,12 +1,12 @@
 #include <stdio.h>
 typedef struct
 {
-    char str[3];
+    char str[5];
     int num;
 } NumberRepr;
 void format(NumberRepr* number)
 {
-    sprintf(number->str, "%3d", number->num);
+    sprintf(number->str, "%d", number->num);
 }
 int main()
 {
