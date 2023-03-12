@@ -110,7 +110,7 @@ int int_vector_shrink_to_fit(struct IntVector *v){
 }
 
 int int_vector_resize(struct IntVector *v, size_t new_size){
-    if (new_size >= v->size){
+    if (new_size > v->size){
         if (v->capacity < new_size){
             v->capacity = new_size;
             v->data = realloc(v->data, v->capacity * sizeof(int));
@@ -119,6 +119,9 @@ int int_vector_resize(struct IntVector *v, size_t new_size){
             v->data[i] = 0;
         }
         v->size = new_size;
+        return 0;
+    }
+    else if (new_size == v->size){
         return 0;
     }
     else {
