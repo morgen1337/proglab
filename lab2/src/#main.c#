@@ -3,6 +3,9 @@
 #include <errno.h>
 #include "IntVector.h"
 
+struct IntVect
+
+
 int main()
 {
     struct IntVector *a1;

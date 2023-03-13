@@ -1,11 +1,4 @@
-#include <stddef.h>
 
-struct IntVector
-{
-    int *data;
-    size_t size;
-    size_t capacity;
-};
 
 struct IntVector *int_vector_new(size_t initial_capacity);
 
