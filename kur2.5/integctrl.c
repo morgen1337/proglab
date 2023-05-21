@@ -109,19 +109,15 @@ int main(int argc, char *argv[]) {
 
         // Сравниваем хэш-коды
         if (strcmp(f.md5_str, computed_md5_str) == 0) {
-            printf("'%s' - file was changed or corrupted\n", f.name);
+            printf("'%s' - file was not changed\n", f.name);
         } else {
-            printf("'%s' file was not changed\n", f.name);
+            printf("'%s' - file was changed or corrupted \n", f.name);
         }
         
     }
     fclose(data1);
     closedir(dir);
-
-    
-
-
-    
+ 
 }
     return 0;
 }
