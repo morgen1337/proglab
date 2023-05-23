@@ -1,4 +1,11 @@
-1 loc 4 0
-2 wow.txt 8 1 4c56ff4ce4aaf9573aa5dff913df997a
-3 man.txt 8 1 2a4f7bb42f6eff58749aeebd1418b38a
-4 was.txt 8 1 56b5b983934c58a5c7024809b3400426
+1 loc 4 
+2 loc/mal 4 
+3 hey.txt 8 2 81485ece6d17c23011867f3c1e2254a8
+4 hellome.txt 8 2 eaa50ee5d600f453eac3f8cbb53a34eb
+5 loc/mal/mal2 4 
+6 whatsap.c 8 5 fa92511dd32b649689e5f20d7fbb0b74
+7 man.txt 8 1 0b6a0a5c15d7c12cfdfc6c6a96038119
+8 was.txt 8 1 8096c2918489a06b9d34818dc190a9c5
+9 loc/loc2 4 
+10 hola.txt 8 9 920769412ad08e4d96d9c0f26d50a4a8
+11 photo.jpg 8 9 dd6b922234edf077cdb4a9dd5356994c

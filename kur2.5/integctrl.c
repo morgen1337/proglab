@@ -4,9 +4,11 @@
 #include <dirent.h>
 #include <openssl/md5.h>
 
+#define SAVECODE 6
+#define CHECKCODE 2
+#define RECCODE 3
 
-#define MAX 10
-#define MAX_LINE_LENGTH 100
+#define MAX_LINE_LENGTH 300
 
 struct Files {
     unsigned int id;
@@ -16,8 +18,8 @@ struct Files {
     char md5_str[2 * MD5_DIGEST_LENGTH + 1];
 };
 
-void calculateMD5(const char *filename, unsigned char *md5Digest[], char folder[]) {
-    char dest[80];
+void calculateMD5(const char *filename, unsigned char *md5Digest, char folder[]) {
+    char dest[MAX_LINE_LENGTH];
     sprintf(dest, "%s/%s", folder, filename);
     FILE *file = fopen(dest, "rb");
     if (file == NULL) {
@@ -36,70 +38,119 @@ void calculateMD5(const char *filename, unsigned char *md5Digest[], char folder[
 
     fclose(file);
 
-    //unsigned char md5Digest[MD5_DIGEST_LENGTH];
     MD5_Final(md5Digest, &md5Context);
 
 }
 
-
-void filefree(struct Files file[] ){
-    for (int i = 0; i < MAX; i++){
-        if (file[i].name != NULL)
-        free(file[i].name);
-        
-    }
-}
-int main(int argc, char *argv[]) {
-
-    unsigned char md5Digest[MD5_DIGEST_LENGTH];
-    int i = 2;
-    DIR *dir = opendir(argv[2]);
-    
+void md5dir(char *directory, int *id, FILE *data, int recmode){
+    DIR *dir = opendir(directory);
     struct dirent *entry;
-
-    if (strcmp(argv[1], "-s") == 0){
-    char dest[80];
-    sprintf(dest, "%s/%s", argv[3], "data.txt");
-    FILE *data = fopen(dest, "w");
-
-    fprintf(data, "1 %s %d 0\n", argv[2], DT_DIR);
+    unsigned char md5Digest[MD5_DIGEST_LENGTH];
     if (dir){
+    int parent = (*id)++;
+    fprintf(data, "%d %s %d \n", *id, directory, DT_DIR);
+    parent++;
     while ((entry = readdir(dir)) != NULL){
         if (entry->d_type == DT_REG){
-        fprintf(data, "%d %s %d 1 ", i, entry->d_name, entry->d_type);
-        calculateMD5(entry->d_name, &md5Digest, argv[2]);
+        fprintf(data, "%d %s %d %d ", ++(*id), entry->d_name, entry->d_type, parent);
+        calculateMD5(entry->d_name, md5Digest, directory);
 
         for (int i = 0; i < MD5_DIGEST_LENGTH; i++) 
-        fprintf(data, "%02x", md5Digest[i]);
-        
+            fprintf(data, "%02x", md5Digest[i]);
         fprintf(data, "\n");
-        i++;
+        
         }
-        else if (entry->d_type == DT_DIR & strcmp(".", entry->d_name) != 0 & strcmp("..", entry->d_name) != 0){
-            //printf("FOLDER %s\n", entry->d_name);
-            fprintf(data, "%d %s %d 1", i, entry->d_name, entry->d_type);
-            i++;
-            fprintf(data, "\n");
+        else if ((entry->d_type == DT_DIR) & (strcmp(".", entry->d_name) != 0) & (strcmp("..", entry->d_name) != 0)){
+            char dirnext[MAX_LINE_LENGTH];
+            sprintf(dirnext, "%s/%s", directory, entry->d_name);
+            if (recmode)
+                md5dir(dirnext, id, data, 1);
         }
     }}
+    closedir(dir);
+}
+
+
+int main(int argc, char *argv[]) {
+    int Code = 0;
+    int databaseindex = 0;
+    if (argc == 1){
+        printf("Flags were expected (-s or -c) and -f (database) (dirfortesting)\n");
+        return -1;
+    }
+    for (int i = 1; i < argc; i++){
+        if (strlen(argv[i]) == 2){
+            if (argv[i][0] == '-'){
+                if (argv[i][1] == 'f'){
+                    databaseindex = i+1;
+                }
+                if (argv[i][1] == 'c')
+                    Code += CHECKCODE;
+                if (argv[i][1] == 's'){
+                    Code += SAVECODE;
+                }
+                if (argv[i][1] == 'r'){
+                    Code += RECCODE;
+                }
+        }
+    }
+    }
+    int id;
+        if ((Code == 0) || (Code == SAVECODE + CHECKCODE) || (Code == SAVECODE + CHECKCODE + RECCODE)){
+        printf("was not specified: integrity check(-c) or saving data(-s) is required\n");
+        return -1;
+    }
+    if ((databaseindex + 1 >= argc) & (databaseindex != 0)){
+        printf("Few arguments\n");
+        return -1;
+    }
+    DIR* data = opendir(argv[databaseindex]);
+    DIR* check = opendir(argv[databaseindex+1]);
+    if ((!data) || (databaseindex > argc)){
+        printf("Could not open database directory\n");
+        return -1;
+    }
+    if (!check){
+        printf("Could not open directory to save info about\n");
+        return -1;
+    }
+
+    closedir(data);
+    closedir(check);
+
+    if (Code >= SAVECODE){
+    id = 0;
+    char dest[MAX_LINE_LENGTH];
+    sprintf(dest, "%s/%s", argv[databaseindex], "data.txt");
+    FILE *data = fopen(dest, "w");
+    if (Code == 9)
+        md5dir(argv[databaseindex + 1], &id, data, 1);
+    else
+        md5dir(argv[databaseindex + 1], &id, data, 0);
+    
     fclose(data);
     }
-    else if (strcmp(argv[1], "-c") == 0){
-    char dest1[80];
-    sprintf(dest1, "%s/%s", argv[3], "data.txt");
+
+    // флаг check
+    else if (Code <= CHECKCODE + RECCODE){
+    unsigned char md5Digest[MD5_DIGEST_LENGTH];
+    char dest1[MAX_LINE_LENGTH];
+    sprintf(dest1, "%s/%s", argv[databaseindex], "data.txt");
     FILE *data1 = fopen(dest1, "r");
 
     char line[MAX_LINE_LENGTH];
     while (fgets(line, MAX_LINE_LENGTH, data1) != NULL) {
         // Разбиваем строку на отдельные значения
         struct Files f;
-        
+        char folders[100][MAX_LINE_LENGTH];
         sscanf(line, "%d %s %d %d %s", &(f.id), f.name, &(f.type), &(f.parent_id), f.md5_str);
 
-        if (f.type == DT_DIR)
+        if (f.type == DT_DIR){
+            sprintf(folders[f.id], "%s", f.name);
             continue;
+            }
         // Вычисляем хэш-код MD5 для файла
-        calculateMD5(f.name, &md5Digest, argv[2]);
+        calculateMD5(f.name, md5Digest, folders[f.parent_id]);
 
         // Преобразуем хэш-код MD5 в строку
         char computed_md5_str[2 * MD5_DIGEST_LENGTH + 1];
@@ -109,14 +160,13 @@ int main(int argc, char *argv[]) {
 
         // Сравниваем хэш-коды
         if (strcmp(f.md5_str, computed_md5_str) == 0) {
-            printf("'%s' - file was not changed\n", f.name);
+            printf("'%s': Integrity test passed successfully ✓\n", f.name);
         } else {
-            printf("'%s' - file was changed or corrupted \n", f.name);
+            printf("'%s': Integrity test failed x\n", f.name);
         }
         
     }
     fclose(data1);
-    closedir(dir);
  
 }
     return 0;
